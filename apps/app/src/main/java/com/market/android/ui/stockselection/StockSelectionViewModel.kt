@@ -58,11 +58,23 @@ class StockSelectionViewModel(application: Application) : AndroidViewModel(appli
         }
     }
 
-    fun selectCondominio(condominioId: String) {
+    fun selectCondominio(condominio: Condominio) {
         viewModelScope.launch {
-            val token = tokenPrefs.accessToken.first() ?: return@launch
-            tokenPrefs.saveTokens(token, condominioId)
-            _actionState.value = StockActionState.Success
+            _actionState.value = StockActionState.Loading
+            try {
+                val token = "Bearer ${tokenPrefs.accessToken.first()}"
+                // Faz o join no backend para atualizar condominioId no banco
+                val response = api.joinCondominio(token, JoinCondominioRequest(condominio.code))
+                if (response.isSuccessful) {
+                    val rawToken = tokenPrefs.accessToken.first() ?: return@launch
+                    tokenPrefs.saveTokens(rawToken, condominio.id)
+                    _actionState.value = StockActionState.Success
+                } else {
+                    _actionState.value = StockActionState.Error("Erro ao selecionar estoque")
+                }
+            } catch (e: Exception) {
+                _actionState.value = StockActionState.Error("Erro de conexão")
+            }
         }
     }
 
@@ -76,6 +88,11 @@ class StockSelectionViewModel(application: Application) : AndroidViewModel(appli
                     CreateCondominioRequest(name, address, code)
                 )
                 if (response.isSuccessful) {
+                    val created = response.body()!!
+                    // Join automaticamente após criar
+                    api.joinCondominio(token, JoinCondominioRequest(code))
+                    val rawToken = tokenPrefs.accessToken.first() ?: return@launch
+                    tokenPrefs.saveTokens(rawToken, created.id)
                     loadCondominios()
                     _actionState.value = StockActionState.Success
                 } else {

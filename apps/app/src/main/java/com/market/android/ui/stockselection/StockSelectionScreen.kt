@@ -103,7 +103,7 @@ fun StockSelectionScreen(
                             items(s.condominios) { condominio ->
                                 StockCard(
                                     condominio = condominio,
-                                    onClick = { vm.selectCondominio(condominio.id) }
+                                    onClick = { vm.selectCondominio(condominio) }
                                 )
                             }
                             item {
