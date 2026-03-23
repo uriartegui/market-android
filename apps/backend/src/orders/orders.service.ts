@@ -116,4 +116,60 @@ export class OrdersService {
       data: { status },
     });
   }
+
+  async createKiosk(dto: CreateOrderDto, condominioId: string) {
+    const productIds = dto.items.map((i) => i.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds }, condominioId, active: true },
+    });
+
+    if (products.length !== productIds.length) {
+      throw new NotFoundException('Um ou mais produtos não encontrados');
+    }
+
+    for (const item of dto.items) {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product || product.quantity < item.quantity) {
+        throw new BadRequestException(
+          `Estoque insuficiente para: ${product?.name}`,
+        );
+      }
+    }
+
+    const total = dto.items.reduce((sum, item) => {
+      const product = products.find((p) => p.id === item.productId);
+      return sum + Number(product!.price) * item.quantity;
+    }, 0);
+
+    const order = await this.prisma.$transaction(async (tx) => {
+      const newOrder = await tx.order.create({
+        data: {
+          condominioId,
+          total,
+          items: {
+            create: dto.items.map((item) => {
+              const product = products.find((p) => p.id === item.productId)!;
+              return {
+                productId: item.productId,
+                quantity: item.quantity,
+                price: product.price,
+              };
+            }),
+          },
+        },
+        include: { items: { include: { product: true } } },
+      });
+
+      for (const item of dto.items) {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { quantity: { decrement: item.quantity } },
+        });
+      }
+
+      return newOrder;
+    });
+
+    return order;
+  }
 }

@@ -45,8 +45,8 @@ export class PaymentsService {
         description: `Pedido #${order.id.slice(0, 8)}`,
         payment_method_id: 'pix',
         payer: {
-          email: order.user.email,
-        },
+          email: order.user?.email ?? 'cliente@mercadinho.com',
+        },        
       },
     });
 

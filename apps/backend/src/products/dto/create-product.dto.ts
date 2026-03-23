@@ -25,4 +25,12 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   imageUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  qrCode?: string;
+
+  @IsString()
+  @IsOptional()
+  barcode?: string;
 }

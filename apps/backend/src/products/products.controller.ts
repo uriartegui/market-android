@@ -35,6 +35,11 @@ export class ProductsController {
     return this.productsService.findByQrCode(qrCode);
   }
 
+  @Get('barcode/:barcode')
+  findByBarcode(@Param('barcode') barcode: string) {
+    return this.productsService.findByBarcode(barcode);
+  }
+  
   @Get(':id')
   findOne(@Param('id') id: string, @CurrentUser() user: any) {
     return this.productsService.findOne(id, user.condominioId);

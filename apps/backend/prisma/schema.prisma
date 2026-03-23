@@ -56,6 +56,7 @@ model Product {
   category     String
   active       Boolean  @default(true)
   qrCode       String?  @unique
+  barcode      String?  @unique
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -71,8 +72,8 @@ model Order {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  userId       String
-  user         User       @relation(fields: [userId], references: [id])
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id])
   condominioId String
   condominio   Condominio @relation(fields: [condominioId], references: [id])
   items        OrderItem[]
@@ -108,6 +109,7 @@ enum Role {
   ADMIN
   LOJISTA
   MORADOR
+  KIOSK
 }
 
 enum OrderStatus {

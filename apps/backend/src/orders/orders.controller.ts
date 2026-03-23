@@ -40,4 +40,9 @@ export class OrdersController {
   ) {
     return this.ordersService.updateStatus(id, status);
   }
+
+  @Post('kiosk')
+  createKiosk(@Body() dto: CreateOrderDto, @CurrentUser() user: any) {
+    return this.ordersService.createKiosk(dto, user.condominioId);
+  }
 }

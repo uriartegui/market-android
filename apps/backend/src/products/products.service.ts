@@ -83,4 +83,14 @@ export class ProductsService {
 
     return { message: 'Produto removido com sucesso' };
   }
+
+  async findByBarcode(barcode: string) {
+    const product = await this.prisma.product.findFirst({
+      where: { barcode, active: true },
+    });
+
+    if (!product) throw new NotFoundException('Produto não encontrado');
+    return product;
+  }
 }
+
