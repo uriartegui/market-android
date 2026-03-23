@@ -1,32 +1,33 @@
 import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class UpdateProductDto {
-  @IsString()
   @IsOptional()
+  @IsString()
   name?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   description?: string;
 
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
   @IsOptional()
+  @IsNumber()
+  @Min(0)
   price?: number;
 
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
   @IsOptional()
+  @IsNumber()
+  @Min(0)
   quantity?: number;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   category?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   imageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  barcode?: string;
 }
