@@ -1,0 +1,23 @@
+{
+    "name": "market-android",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/backend",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "docker-compose up -d && npm run dev --workspace=apps/backend",
+        "dev:backend": "npm run start:dev --workspace=apps/backend",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f"
+    },
+    "dependencies": {
+        "@nestjs/throttler": "^6.5.0",
+        "ioredis": "^5.10.1"
+    },
+    "devDependencies": {
+        "@types/ioredis": "^4.28.10"
+    }
+}

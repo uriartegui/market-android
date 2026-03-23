@@ -1,0 +1,25 @@
+# Env
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+build/
+
+# Android
+*.iml
+.gradle/
+local.properties
+.idea/
+*.keystore
+!debug.keystore
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
