@@ -20,7 +20,8 @@ export class CreateProductDto {
   quantity: number;
 
   @IsString()
-  category: string;
+  @IsOptional()
+  category?: string;
 
   @IsString()
   @IsOptional()

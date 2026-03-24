@@ -42,8 +42,17 @@ fun ProductsScreen(vm: ProductsViewModel = viewModel()) {
     var showStockDialog by remember { mutableStateOf<Product?>(null) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
 
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(actionState) {
-        if (actionState is ProductActionState.Success) vm.resetActionState()
+        when (actionState) {
+            is ProductActionState.Success -> vm.resetActionState()
+            is ProductActionState.Error -> {
+                errorMessage = (actionState as ProductActionState.Error).message
+                vm.resetActionState()
+            }
+            else -> {}
+        }
     }
 
     val products = (state as? ProductsState.Success)?.products ?: emptyList()
@@ -385,6 +394,17 @@ fun ProductsScreen(vm: ProductsViewModel = viewModel()) {
 
             item { Spacer(Modifier.height(80.dp)) }
         }
+    }
+
+    // Snackbar de erro
+    errorMessage?.let { msg ->
+        Snackbar(
+            modifier = Modifier.padding(16.dp),
+            action = {
+                TextButton(onClick = { errorMessage = null }) { Text("OK") }
+            },
+            containerColor = RedColor
+        ) { Text(msg, color = Color.White) }
     }
 
     // Dialogs
