@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -411,6 +412,7 @@ fun ProductsScreen(vm: ProductsViewModel = viewModel()) {
     if (showAddDialog) {
         ProductDialog(
             product = null,
+            existingProducts = products,
             onDismiss = { showAddDialog = false },
             onSave = { vm.createProduct(it); showAddDialog = false }
         )
@@ -418,6 +420,7 @@ fun ProductsScreen(vm: ProductsViewModel = viewModel()) {
     selectedProduct?.let { product ->
         ProductDialog(
             product = product,
+            existingProducts = products,
             onDismiss = { selectedProduct = null },
             onSave = { vm.updateProduct(product.id, it); selectedProduct = null }
         )
@@ -586,27 +589,123 @@ fun ProductRow(
 // ── Dialogs (mantidos do original) ────────────────────────
 
 @Composable
-fun ProductDialog(product: Product?, onDismiss: () -> Unit, onSave: (Product) -> Unit) {
-    var name by remember { mutableStateOf(product?.name ?: "") }
+fun ProductDialog(
+    product: Product?,
+    existingProducts: List<Product>,
+    onDismiss: () -> Unit,
+    onSave: (Product) -> Unit
+) {
+    var name        by remember { mutableStateOf(product?.name ?: "") }
     var description by remember { mutableStateOf(product?.description ?: "") }
-    var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
-    var quantity by remember { mutableStateOf(product?.quantity?.toString() ?: "0") }
-    var category by remember { mutableStateOf(product?.category ?: "") }
-    var barcode by remember { mutableStateOf(product?.barcode ?: "") }
+    var price       by remember { mutableStateOf(product?.price?.toString() ?: "") }
+    var quantity    by remember { mutableStateOf(product?.quantity?.toString() ?: "0") }
+    var category    by remember { mutableStateOf(product?.category ?: "") }
+    var barcode     by remember { mutableStateOf(product?.barcode ?: "") }
+
+    // ── Erros inline ──────────────────────────────────
+    val nameError: String? = when {
+        name.isNotBlank() && existingProducts.any {
+            it.name.equals(name.trim(), ignoreCase = true) && it.id != (product?.id ?: "")
+        } -> "Já existe um produto com esse nome"
+        else -> null
+    }
+
+    val priceError: String? = when {
+        price.contains(',') -> "Use ponto (.) como separador decimal. Ex: 8.90"
+        price.isNotBlank() && price.toDoubleOrNull() == null -> "Valor inválido"
+        else -> null
+    }
+
+    val barcodeError: String? = when {
+        barcode.isNotBlank() && existingProducts.any {
+            it.barcode?.equals(barcode.trim(), ignoreCase = true) == true &&
+                    it.id != (product?.id ?: "")
+        } -> "Já existe um produto com esse código de barras"
+        else -> null
+    }
+
+    val canSave = name.isNotBlank() && price.isNotBlank() &&
+            nameError == null && priceError == null && barcodeError == null
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (product == null) "Novo Produto" else "Editar Produto") },
+        title = { Text(if (product == null) "Novo Produto" else "Editar Produto",
+            fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome*") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Preço*") }, modifier = Modifier.weight(1f))
-                    OutlinedTextField(value = quantity, onValueChange = { quantity = it }, label = { Text("Qtd*") }, modifier = Modifier.weight(1f))
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Nome
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nome*") },
+                    isError = nameError != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                if (nameError != null) {
+                    Text(nameError, color = RedColor, fontSize = 11.sp,
+                        modifier = Modifier.padding(start = 4.dp))
                 }
-                OutlinedTextField(value = category, onValueChange = { category = it }, label = { Text("Categoria") }, modifier = Modifier.fillMaxWidth())
-                OutlinedTextField(value = barcode, onValueChange = { barcode = it }, label = { Text("Código de barras") }, modifier = Modifier.fillMaxWidth())
+
+                // Descrição
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Descrição") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Preço + Quantidade
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        OutlinedTextField(
+                            value = price,
+                            onValueChange = { price = it },
+                            label = { Text("Preço*") },
+                            isError = priceError != null,
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        if (priceError != null) {
+                            Text(priceError, color = RedColor, fontSize = 11.sp,
+                                modifier = Modifier.padding(start = 4.dp))
+                        }
+                    }
+                    OutlinedTextField(
+                        value = quantity,
+                        onValueChange = { quantity = it },
+                        label = { Text("Qtd*") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true
+                    )
+                }
+
+                // Categoria
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Categoria") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                // Código de barras
+                OutlinedTextField(
+                    value = barcode,
+                    onValueChange = { barcode = it },
+                    label = { Text("Código de barras") },
+                    isError = barcodeError != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                if (barcodeError != null) {
+                    Text(barcodeError, color = RedColor, fontSize = 11.sp,
+                        modifier = Modifier.padding(start = 4.dp))
+                }
             }
         },
         confirmButton = {
@@ -614,17 +713,17 @@ fun ProductDialog(product: Product?, onDismiss: () -> Unit, onSave: (Product) ->
                 onClick = {
                     onSave(Product(
                         id = product?.id ?: "",
-                        name = name,
+                        name = name.trim(),
                         description = description.ifBlank { null },
                         price = price.toDoubleOrNull() ?: 0.0,
                         quantity = quantity.toIntOrNull() ?: 0,
                         category = category.ifBlank { null },
-                        barcode = barcode.ifBlank { null },
+                        barcode = barcode.trim().ifBlank { null },
                         imageUrl = product?.imageUrl,
                         condominioId = product?.condominioId ?: ""
                     ))
                 },
-                enabled = name.isNotBlank() && price.isNotBlank(),
+                enabled = canSave,
                 colors = ButtonDefaults.buttonColors(containerColor = PurpleColor)
             ) { Text("Salvar") }
         },
