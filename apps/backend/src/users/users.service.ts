@@ -46,6 +46,12 @@ export class UsersService {
     });
   }
 
+  async resetKioskUser(condominioId: string) {
+    const email = `kiosk-${condominioId}@market.internal`;
+    await this.prisma.user.deleteMany({ where: { email } });
+    return { message: 'Conta kiosk removida com sucesso' };
+  }
+
   async getKioskUser(condominioId: string) {
     const email = `kiosk-${condominioId}@market.internal`;
     const user = await this.prisma.user.findUnique({

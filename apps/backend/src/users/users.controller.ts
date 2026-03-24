@@ -1,5 +1,5 @@
 import {
-  Controller, Get, Put, Post,
+  Controller, Get, Put, Post, Delete,
   Body, UseGuards, Request,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -29,5 +29,10 @@ export class UsersController {
   @Get('kiosk')
   getKiosk(@Request() req) {
     return this.usersService.getKioskUser(req.user.condominioId);
+  }
+
+  @Delete('kiosk')
+  resetKiosk(@Request() req) {
+    return this.usersService.resetKioskUser(req.user.condominioId);
   }
 }
