@@ -82,7 +82,12 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             _actionState.value = ProductActionState.Loading
             try {
                 val token = "Bearer ${tokenPrefs.accessToken.first()}"
-                val response = api.createProduct(token, product)
+                val condominioId = tokenPrefs.condominioId.first() ?: run {
+                    _actionState.value = ProductActionState.Error("Estoque não selecionado")
+                    return@launch
+                }
+                val productWithCondominio = product.copy(condominioId = condominioId)
+                val response = api.createProduct(token, productWithCondominio)
                 if (response.isSuccessful) {
                     loadProducts()
                     _actionState.value = ProductActionState.Success
