@@ -1,5 +1,6 @@
 package com.market.android.data.network
 
+import android.content.Context
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -14,14 +15,22 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val httpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private lateinit var _apiService: ApiService
 
-    val apiService: ApiService by lazy {
-        Retrofit.Builder()
+    val apiService: ApiService
+        get() = _apiService
+
+    fun init(context: Context) {
+        val authenticator = TokenAuthenticator(context.applicationContext)
+
+        val httpClient = OkHttpClient.Builder()
+            .authenticator(authenticator)
+            .addInterceptor(loggingInterceptor)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
+
+        _apiService = Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(httpClient)
             .addConverterFactory(GsonConverterFactory.create())

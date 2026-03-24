@@ -77,6 +77,26 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
         _cart.value = _cart.value.filter { it.product.id != productId }
     }
 
+    fun increaseQuantity(productId: String) {
+        val current = _cart.value.toMutableList()
+        val item = current.find { it.product.id == productId }
+        item?.quantity++
+        _cart.value = current
+    }
+
+    fun decreaseQuantity(productId: String) {
+        val current = _cart.value.toMutableList()
+        val item = current.find { it.product.id == productId }
+        if (item != null) {
+            if (item.quantity > 1) {
+                item.quantity--
+                _cart.value = current
+            } else {
+                _cart.value = current.filter { it.product.id != productId }
+            }
+        }
+    }
+
     fun resumeScanning() {
         _scannerState.value = ScannerState.Scanning
     }

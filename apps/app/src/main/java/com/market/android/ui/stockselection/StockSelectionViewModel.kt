@@ -67,7 +67,7 @@ class StockSelectionViewModel(application: Application) : AndroidViewModel(appli
                 val response = api.joinCondominio(token, JoinCondominioRequest(condominio.code))
                 if (response.isSuccessful) {
                     val rawToken = tokenPrefs.accessToken.first() ?: return@launch
-                    tokenPrefs.saveTokens(rawToken, condominio.id)
+                    tokenPrefs.saveTokens(rawToken, null, condominio.id)
                     _actionState.value = StockActionState.Success
                 } else {
                     _actionState.value = StockActionState.Error("Erro ao selecionar estoque")
@@ -92,7 +92,7 @@ class StockSelectionViewModel(application: Application) : AndroidViewModel(appli
                     // Join automaticamente após criar
                     api.joinCondominio(token, JoinCondominioRequest(code))
                     val rawToken = tokenPrefs.accessToken.first() ?: return@launch
-                    tokenPrefs.saveTokens(rawToken, created.id)
+                    tokenPrefs.saveTokens(rawToken, null, created.id)
                     loadCondominios()
                     _actionState.value = StockActionState.Success
                 } else {

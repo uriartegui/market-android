@@ -12,6 +12,15 @@ data class LoginResponse(
     val user: UserResponse
 )
 
+data class RefreshRequest(
+    val refreshToken: String
+)
+
+data class RefreshResponse(
+    val accessToken: String,
+    val refreshToken: String
+)
+
 data class UserResponse(
     val id: String,
     val name: String,

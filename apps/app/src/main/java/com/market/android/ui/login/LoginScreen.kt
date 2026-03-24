@@ -1,14 +1,21 @@
 package com.market.android.ui.login
 
+import androidx.compose.animation.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -16,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
+    sessionExpired: Boolean = false,
     vm: LoginViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
@@ -34,6 +42,49 @@ fun LoginScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
+        // Banner de sessão expirada
+        AnimatedVisibility(
+            visible = sessionExpired,
+            enter = slideInVertically() + fadeIn(),
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFF3CD)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFF856404),
+                        modifier = Modifier.size(28.dp)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            "Sessão expirada",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF856404),
+                            fontSize = 15.sp
+                        )
+                        Text(
+                            "Sua sessão expirou após muito tempo sem renovação. Faça login novamente para continuar.",
+                            color = Color(0xFF856404),
+                            fontSize = 13.sp
+                        )
+                    }
+                }
+            }
+        }
+
         Text(
             text = "🛒 Market",
             fontSize = 40.sp,

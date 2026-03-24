@@ -5,10 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,6 +69,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun resetKioskUser() {
+        viewModelScope.launch {
+            try {
+                val token = "Bearer ${tokenPrefs.accessToken.first()}"
+                api.resetKioskUser(token)
+                _kioskEmail.value = null
+                _actionMessage.value = "Conta kiosk removida. Crie uma nova."
+            } catch (e: Exception) {
+                _actionMessage.value = "Erro ao resetar conta kiosk"
+            }
+        }
+    }
+
     fun logout(tokenPreferences: TokenPreferences) {
         viewModelScope.launch {
             tokenPreferences.clearTokens()
@@ -89,6 +105,8 @@ fun SettingsScreen(
 
     var showKioskDialog by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showPinDialog by remember { mutableStateOf(false) }
+    val currentPin by tokenPrefs.managerPin.collectAsState(initial = null)
 
     LaunchedEffect(actionMessage) {
         if (actionMessage != null) {
@@ -128,6 +146,32 @@ fun SettingsScreen(
                 }
             }
 
+            // PIN do gerente
+            Text("Segurança", fontWeight = FontWeight.Bold, fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Lock, null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("PIN do Gerente", fontWeight = FontWeight.Bold)
+                        Text(
+                            if (currentPin != null) "PIN configurado — toque 5x no status do scanner para desbloquear"
+                            else "Configure um PIN para desbloquear o modo kiosk",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Button(onClick = { showPinDialog = true }) {
+                        Text(if (currentPin != null) "Alterar" else "Definir")
+                    }
+                }
+            }
+
             // Usuário Kiosk
             Text("Conta Kiosk", fontWeight = FontWeight.Bold, fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -139,11 +183,17 @@ fun SettingsScreen(
                             Icon(Icons.Default.CheckCircle, null,
                                 tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(12.dp))
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text("Conta kiosk configurada", fontWeight = FontWeight.Bold)
                                 Text(kioskEmail!!, fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
+                            OutlinedButton(
+                                onClick = { vm.resetKioskUser() },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                )
+                            ) { Text("Resetar") }
                         }
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -205,6 +255,46 @@ fun SettingsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showKioskDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    if (showPinDialog) {
+        var newPin by remember { mutableStateOf("") }
+        val scope = rememberCoroutineScope()
+        AlertDialog(
+            onDismissRequest = { showPinDialog = false },
+            title = { Text("Definir PIN do Gerente") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("O PIN de 4 dígitos será exigido para sair do modo kiosk.", fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = newPin,
+                        onValueChange = { if (it.length <= 4) newPin = it },
+                        label = { Text("Novo PIN (4 dígitos)") },
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            tokenPrefs.saveManagerPin(newPin)
+                            showPinDialog = false
+                        }
+                    },
+                    enabled = newPin.length == 4
+                ) { Text("Salvar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPinDialog = false }) { Text("Cancelar") }
             }
         )
     }

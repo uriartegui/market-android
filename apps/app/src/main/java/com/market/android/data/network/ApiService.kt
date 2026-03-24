@@ -10,6 +10,12 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
+    @POST("auth/refresh")
+    suspend fun refreshToken(@Body request: RefreshRequest): Response<RefreshResponse>
+
+    @POST("auth/logout")
+    suspend fun logout(@Body request: RefreshRequest): Response<Unit>
+
     // ─── USERS ────────────────────────────────────────────
     @GET("users/me")
     suspend fun getMe(@Header("Authorization") token: String): Response<UserResponse>
@@ -24,6 +30,11 @@ interface ApiService {
     suspend fun getKioskUser(
         @Header("Authorization") token: String
     ): Response<KioskUserResponse>
+
+    @DELETE("users/kiosk")
+    suspend fun resetKioskUser(
+        @Header("Authorization") token: String
+    ): Response<Unit>
 
     // ─── CONDOMINIOS ──────────────────────────────────────
     @GET("condominios")

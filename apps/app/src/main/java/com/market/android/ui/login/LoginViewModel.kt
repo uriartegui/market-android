@@ -34,7 +34,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     val body = response.body()!!
                     tokenPrefs.saveTokens(
                         accessToken = body.accessToken,
-                        condominioId = body.user.condominioId
+                        refreshToken = body.refreshToken,
+                        condominioId = body.user.condominioId,
+                        userRole = body.user.role
                     )
                     _state.value = LoginState.Success
                 } else {
