@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.market.android.data.model.AdjustStockRequest
 import com.market.android.data.model.Product
+import com.market.android.data.model.ProductRequest
 import com.market.android.data.network.RetrofitClient
 import com.market.android.data.preferences.TokenPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -82,17 +83,21 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             _actionState.value = ProductActionState.Loading
             try {
                 val token = "Bearer ${tokenPrefs.accessToken.first()}"
-                val condominioId = tokenPrefs.condominioId.first() ?: run {
-                    _actionState.value = ProductActionState.Error("Estoque não selecionado")
-                    return@launch
-                }
-                val productWithCondominio = product.copy(condominioId = condominioId)
-                val response = api.createProduct(token, productWithCondominio)
+                val request = ProductRequest(
+                    name = product.name,
+                    description = product.description,
+                    price = product.price,
+                    quantity = product.quantity,
+                    category = product.category,
+                    barcode = product.barcode,
+                    imageUrl = product.imageUrl
+                )
+                val response = api.createProduct(token, request)
                 if (response.isSuccessful) {
                     loadProducts()
                     _actionState.value = ProductActionState.Success
                 } else {
-                    _actionState.value = ProductActionState.Error("Erro ao criar produto")
+                    _actionState.value = ProductActionState.Error("Erro ao criar produto (${response.code()})")
                 }
             } catch (e: Exception) {
                 _actionState.value = ProductActionState.Error("Erro de conexão")
@@ -105,7 +110,16 @@ class ProductsViewModel(application: Application) : AndroidViewModel(application
             _actionState.value = ProductActionState.Loading
             try {
                 val token = "Bearer ${tokenPrefs.accessToken.first()}"
-                val response = api.updateProduct(token, id, product)
+                val request = ProductRequest(
+                    name = product.name,
+                    description = product.description,
+                    price = product.price,
+                    quantity = product.quantity,
+                    category = product.category,
+                    barcode = product.barcode,
+                    imageUrl = product.imageUrl
+                )
+                val response = api.updateProduct(token, id, request)
                 if (response.isSuccessful) {
                     loadProducts()
                     _actionState.value = ProductActionState.Success

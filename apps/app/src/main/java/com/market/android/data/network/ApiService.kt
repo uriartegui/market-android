@@ -78,14 +78,14 @@ interface ApiService {
     @POST("products")
     suspend fun createProduct(
         @Header("Authorization") token: String,
-        @Body product: Product
+        @Body product: ProductRequest
     ): Response<Product>
 
     @PUT("products/{id}")
     suspend fun updateProduct(
         @Header("Authorization") token: String,
         @Path("id") id: String,
-        @Body product: Product
+        @Body product: ProductRequest
     ): Response<Product>
 
     @PATCH("products/{id}/stock")

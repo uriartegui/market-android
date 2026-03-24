@@ -42,6 +42,17 @@ data class Product(
     val condominioId: String
 )
 
+// Usado apenas para criar/atualizar — sem id/condominioId (backend rejeita campos extras)
+data class ProductRequest(
+    val name: String,
+    val description: String?,
+    val price: Double,
+    val quantity: Int,
+    val category: String?,
+    val barcode: String?,
+    val imageUrl: String? = null
+)
+
 // ─── ORDER ───────────────────────────────────────────
 data class CartItem(
     val product: Product,
