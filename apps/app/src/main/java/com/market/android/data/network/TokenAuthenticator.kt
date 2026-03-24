@@ -20,6 +20,12 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
     // Cliente HTTP separado (sem authenticator) para evitar loop infinito
     private val refreshClient = OkHttpClient()
 
+    companion object {
+        // Envia notificação no máximo 1x por hora
+        private const val NOTIFY_COOLDOWN_MS = 60 * 60 * 1000L
+        @Volatile private var lastNotifiedAt = 0L
+    }
+
     override fun authenticate(route: Route?, response: Response): Request? {
         // Se já tentou renovar nessa requisição, desiste (evita loop)
         if (response.request.header("X-Retry-Auth") != null) return null
@@ -73,6 +79,9 @@ class TokenAuthenticator(private val context: Context) : Authenticator {
     }
 
     private fun notifySessionExpired(tokenPrefs: TokenPreferences) {
+        val now = System.currentTimeMillis()
+        if (now - lastNotifiedAt < NOTIFY_COOLDOWN_MS) return
+        lastNotifiedAt = now
         try {
             val condominioId = runBlocking { tokenPrefs.condominioId.first() }
             val bodyStr = if (condominioId != null) {

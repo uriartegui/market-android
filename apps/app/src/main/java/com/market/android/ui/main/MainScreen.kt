@@ -173,7 +173,7 @@ fun MainScreen(
                     onClick = {
                         scope.launch {
                             val savedPin = tokenPrefs.managerPin.first()
-                            if (pinInput == savedPin) {
+                            if (savedPin == null || pinInput == savedPin) {
                                 showPinDialog = false
                                 pinInput = ""
                                 pinError = false

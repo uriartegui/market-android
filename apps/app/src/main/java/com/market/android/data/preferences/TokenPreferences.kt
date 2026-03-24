@@ -64,6 +64,11 @@ class TokenPreferences(private val context: Context) {
     }
 
     suspend fun clearTokens() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit { prefs ->
+            // Preserve the manager PIN across logouts
+            val pin = prefs[MANAGER_PIN_KEY]
+            prefs.clear()
+            if (pin != null) prefs[MANAGER_PIN_KEY] = pin
+        }
     }
 }

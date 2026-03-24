@@ -5,6 +5,10 @@ import { ConfigService } from '@nestjs/config';
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
+  // Rate-limit: no máximo 1 notificação de sessão expirada por hora por estoque
+  private readonly sessionExpiredCooldown = new Map<string, number>();
+  private readonly COOLDOWN_MS = 60 * 60 * 1000; // 1 hora
+
   constructor(private config: ConfigService) {}
 
   async sendTelegram(message: string): Promise<void> {
@@ -35,6 +39,15 @@ export class NotificationService {
   }
 
   async notifySessionExpired(condominioId?: string): Promise<void> {
+    // Rate-limit: ignora se já enviou nos últimos 60 min para o mesmo estoque
+    const key = condominioId ?? 'unknown';
+    const lastSent = this.sessionExpiredCooldown.get(key) ?? 0;
+    if (Date.now() - lastSent < this.COOLDOWN_MS) {
+      this.logger.debug(`notifySessionExpired ignorado (cooldown) para ${key}`);
+      return;
+    }
+    this.sessionExpiredCooldown.set(key, Date.now());
+
     const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
     const local = condominioId ? `\nEstoque: <code>${condominioId}</code>` : '';
 
