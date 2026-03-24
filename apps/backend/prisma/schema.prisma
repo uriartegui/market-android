@@ -55,14 +55,17 @@ model Product {
   imageUrl     String?
   category     String
   active       Boolean  @default(true)
-  qrCode       String?  @unique
-  barcode      String?  @unique
+  qrCode       String?
+  barcode      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   condominioId String
   condominio   Condominio @relation(fields: [condominioId], references: [id])
   orderItems   OrderItem[]
+
+  @@unique([barcode, condominioId])
+  @@unique([qrCode, condominioId])
 }
 
 model Order {

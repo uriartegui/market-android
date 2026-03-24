@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -9,13 +9,21 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateProductDto, condominioId: string) {
-    return this.prisma.product.create({
-      data: {
-        ...dto,
-        category: dto.category ?? 'GERAL',
-        condominioId,
-      },
-    });
+    try {
+      return await this.prisma.product.create({
+        data: {
+          ...dto,
+          category: dto.category ?? 'GERAL',
+          condominioId,
+        },
+      });
+    } catch (e: any) {
+      if (e?.code === 'P2002') {
+        const field = e?.meta?.target?.includes('barcode') ? 'código de barras' : 'nome/qrCode';
+        throw new ConflictException(`Já existe um produto com esse ${field} neste estoque`);
+      }
+      throw e;
+    }
   }
 
   async findAll(condominioId: string, category?: string, search?: string, lowStock?: boolean) {
