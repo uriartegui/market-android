@@ -2,10 +2,14 @@ import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { NotificationService } from '../notifications/notification.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private notificationService: NotificationService,
+  ) {}
 
   @Post('register')
   register(@Body() dto: RegisterDto) {
@@ -28,5 +32,12 @@ export class AuthController {
   @HttpCode(200)
   logout(@Body('refreshToken') token: string) {
     return this.authService.logout(token);
+  }
+
+  @Post('session-expired')
+  @HttpCode(200)
+  async sessionExpired(@Body('condominioId') condominioId?: string) {
+    await this.notificationService.notifySessionExpired(condominioId);
+    return { ok: true };
   }
 }
