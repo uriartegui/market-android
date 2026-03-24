@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { NotificationService } from '../notifications/notification.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -18,8 +18,9 @@ import { NotificationService } from '../notifications/notification.service';
         signOptions: { expiresIn: (config.get<string>('JWT_EXPIRES_IN') || '15m') as any },
       }),
     }),
+    NotificationsModule,
   ],
-  providers: [AuthService, JwtStrategy, NotificationService],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [JwtModule],
 })

@@ -3,12 +3,14 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { NotificationService } from '../notifications/notification.service';
+import { TokenExpiryScheduler } from '../notifications/token-expiry.scheduler';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
     private notificationService: NotificationService,
+    private tokenExpiryScheduler: TokenExpiryScheduler,
   ) {}
 
   @Post('register')
@@ -38,6 +40,14 @@ export class AuthController {
   @HttpCode(200)
   async sessionExpired(@Body('condominioId') condominioId?: string) {
     await this.notificationService.notifySessionExpired(condominioId);
+    return { ok: true };
+  }
+
+  // Endpoint de teste — dispara o check de expiração manualmente
+  @Post('test-expiry-check')
+  @HttpCode(200)
+  async testExpiryCheck() {
+    await this.tokenExpiryScheduler.checkExpiringTokens();
     return { ok: true };
   }
 }

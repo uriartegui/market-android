@@ -46,4 +46,32 @@ export class NotificationService {
       `<b>Acesse o tablet e faça login novamente.</b>`
     );
   }
+
+  async notifyTokenExpiringSoon(daysLeft: number, userCount: number): Promise<void> {
+    const now = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+    let emoji = '🟡';
+    let urgency = '';
+
+    if (daysLeft === 3) {
+      emoji = '🟡';
+      urgency = 'A sessão expira em <b>3 dias</b>. Você ainda tem tempo.';
+    } else if (daysLeft === 2) {
+      emoji = '🟠';
+      urgency = 'A sessão expira em <b>2 dias</b>. Prepare-se para fazer login em breve.';
+    } else if (daysLeft === 1) {
+      emoji = '🔴';
+      urgency = '⚡ A sessão expira <b>AMANHÃ</b>! Faça login no tablet hoje para renovar.';
+    }
+
+    const sessoes = userCount === 1 ? '1 sessão' : `${userCount} sessões`;
+
+    await this.sendTelegram(
+      `${emoji} <b>Market Kiosk — Aviso de Expiração</b>\n\n` +
+      `${urgency}\n\n` +
+      `📱 ${sessoes} ativa(s) no sistema\n` +
+      `🕐 ${now}\n\n` +
+      `<i>Abra o app e use normalmente para renovar automaticamente.</i>`
+    );
+  }
 }
