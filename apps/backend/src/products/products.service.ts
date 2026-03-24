@@ -10,7 +10,11 @@ export class ProductsService {
 
   async create(dto: CreateProductDto, condominioId: string) {
     return this.prisma.product.create({
-      data: { ...dto, condominioId },
+      data: {
+        ...dto,
+        category: dto.category ?? 'GERAL',
+        condominioId,
+      },
     });
   }
 
