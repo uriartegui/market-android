@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.market.android.data.model.OrderDetail
 import com.market.android.data.model.OrderStats
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 private val Blue700   = Color(0xFF1565C0)
 private val GreenBadge  = Color(0xFF00897B)
@@ -41,6 +43,8 @@ fun OrdersScreen(vm: OrdersViewModel = viewModel()) {
     val ordersState   by vm.ordersState.collectAsState()
     val statsState    by vm.statsState.collectAsState()
     val selectedStatus by vm.selectedStatus.collectAsState()
+
+    var selectedOrder by remember { mutableStateOf<OrderDetail?>(null) }
 
     val tabs = listOf(null to "Todos", "PAGO" to "Pagos",
         "PENDENTE" to "Pendentes", "CANCELADO" to "Cancelados")
@@ -184,7 +188,7 @@ fun OrdersScreen(vm: OrdersViewModel = viewModel()) {
                         }
                     } else {
                         items(s.orders) { order ->
-                            OrderRow(order)
+                            OrderRow(order, onClick = { selectedOrder = order })
                             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                         }
 
@@ -218,6 +222,12 @@ fun OrdersScreen(vm: OrdersViewModel = viewModel()) {
             }
             item { Spacer(Modifier.height(80.dp)) }
         }
+    }
+    selectedOrder?.let { order ->
+        OrderDetailDialog(
+            order = order,
+            onDismiss = { selectedOrder = null }
+        )
     }
 }
 
@@ -320,14 +330,14 @@ fun StatCard(
 // ── Order Row ──────────────────────────────────────────────────────────────
 
 @Composable
-fun OrderRow(order: OrderDetail) {
+fun OrderRow(order: OrderDetail, onClick: () -> Unit = {}) {
     val isCancelled = order.status == "CANCELADO"
     val textAlpha = if (isCancelled) 0.45f else 1f
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { }
+            .clickable { onClick() }
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -456,6 +466,92 @@ fun StatusBadge(status: String) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
+@Composable
+fun OrderDetailDialog(order: OrderDetail, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    "#${order.id.takeLast(8).uppercase()}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+                StatusBadge(order.status)
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Data
+                Text(
+                    formatDateTime(order.createdAt),
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Itens
+                Text("Itens do pedido", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                order.items.forEach { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            "${item.quantity}x ${item.product?.name ?: "Produto"}",
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "R$ ${"%.2f".format(item.price * item.quantity).replace('.', ',')}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Total
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Total", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        "R$ ${"%.2f".format(order.total).replace('.', ',')}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp,
+                        color = StatGreen
+                    )
+                }
+
+                // Pagamento
+                order.payment?.let { payment ->
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text("Pagamento", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Status Pix", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        StatusBadge(payment.status)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Fechar") }
+        }
+    )
+}
 fun formatDateTime(iso: String): String {
     return try {
         // "2026-03-23T14:30:00.000Z" → "23/03/2026 - 14:30"

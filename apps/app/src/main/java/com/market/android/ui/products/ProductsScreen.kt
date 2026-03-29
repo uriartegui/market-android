@@ -23,6 +23,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.market.android.data.model.Product
+import android.Manifest
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.market.android.ui.scanner.HiddenBarcodeScanner
 
 private val BgColor = Color(0xFFF4F5F7)
 private val NavyColor = Color(0xFF1A1F36)
@@ -588,6 +593,7 @@ fun ProductRow(
 
 // ── Dialogs (mantidos do original) ────────────────────────
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun ProductDialog(
     product: Product?,
@@ -601,6 +607,20 @@ fun ProductDialog(
     var quantity    by remember { mutableStateOf(product?.quantity?.toString() ?: "0") }
     var category    by remember { mutableStateOf(product?.category ?: "") }
     var barcode     by remember { mutableStateOf(product?.barcode ?: "") }
+
+    var scanningBarcode by remember { mutableStateOf(false) }
+    val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
+
+// Câmera invisível para preencher barcode
+    if (scanningBarcode && cameraPermission.status.isGranted) {
+        HiddenBarcodeScanner(
+            isScanning = true,
+            onBarcodeDetected = { code ->
+                barcode = code
+                scanningBarcode = false
+            }
+        )
+    }
 
     // ── Erros inline ──────────────────────────────────
     val nameError: String? = when {
@@ -694,14 +714,44 @@ fun ProductDialog(
                 )
 
                 // Código de barras
-                OutlinedTextField(
-                    value = barcode,
-                    onValueChange = { barcode = it },
-                    label = { Text("Código de barras") },
-                    isError = barcodeError != null,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = barcode,
+                        onValueChange = { barcode = it; scanningBarcode = false },
+                        label = { Text(if (scanningBarcode) "Aguardando leitura..." else "Código de barras") },
+                        isError = barcodeError != null,
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        readOnly = scanningBarcode,
+                        trailingIcon = {
+                            if (scanningBarcode) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = PurpleColor
+                                )
+                            }
+                        }
+                    )
+                    IconButton(
+                        onClick = {
+                            if (cameraPermission.status.isGranted) {
+                                scanningBarcode = !scanningBarcode
+                            } else {
+                                cameraPermission.launchPermissionRequest()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            if (scanningBarcode) Icons.Default.Close else Icons.Default.QrCodeScanner,
+                            contentDescription = "Escanear código",
+                            tint = if (scanningBarcode) RedColor else PurpleColor
+                        )
+                    }
+                }
                 if (barcodeError != null) {
                     Text(barcodeError, color = RedColor, fontSize = 11.sp,
                         modifier = Modifier.padding(start = 4.dp))
